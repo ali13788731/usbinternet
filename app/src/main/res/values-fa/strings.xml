@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">کابل اینترنت</string>
+    <string name="app_tagline">اینترنت کامپیوتر را با کابل USB به گوشی بده</string>
+    <string name="notif_channel">وضعیت اتصال</string>
+    <string name="notif_starting">در حال راه‌اندازی…</string>
+    <string name="notif_waiting">منتظر کامپیوتر…</string>
+    <string name="notif_connected">متصل به اینترنت کامپیوتر</string>
+    <string name="notif_stop">قطع اتصال</string>
+    <string name="vpn_failed">راه‌اندازی VPN ناموفق بود. دوباره تلاش کن.</string>
+    <string name="nav_home">خانه</string>
+    <string name="nav_guide">راهنما</string>
+    <string name="nav_settings">تنظیمات</string>
+    <string name="nav_about">درباره</string>
+    <string name="splash_designed_by">طراحی شده توسط Mr.PC</string>
+    <string name="splash_version">نسخه %1$s</string>
+    <string name="continue_btn">ادامه</string>
+    <string name="cancel_btn">انصراف</string>
+    <string name="back_btn">قبلی</string>
+    <string name="next_btn">بعدی</string>
+    <string name="skip_btn">رد کردن</string>
+    <string name="not_now">الان نه</string>
+    <string name="start_btn">شروع کنیم</string>
+    <string name="open_btn">باز کردن</string>
+    <string name="status_idle_title">آماده‌ی اتصال</string>
+    <string name="status_idle_sub">کابل را وصل کن و دکمه را بزن</string>
+    <string name="status_starting_title">در حال راه‌اندازی…</string>
+    <string name="status_starting_sub">چند لحظه صبر کن</string>
+    <string name="status_waiting_title">منتظر کامپیوتر…</string>
+    <string name="status_waiting_sub">برنامه‌ی کامپیوتر را باز کن و کابل را بررسی کن</string>
+    <string name="status_connected_title">متصل شد</string>
+    <string name="status_connected_sub">گوشی از اینترنت کامپیوتر استفاده می‌کند</string>
+    <string name="chip_idle">قطع</string>
+    <string name="chip_starting">در حال شروع</string>
+    <string name="chip_waiting">در انتظار</string>
+    <string name="chip_connected">متصل</string>
+    <string name="btn_connect">اتصال</string>
+    <string name="btn_disconnect">قطع اتصال</string>
+    <string name="btn_cancel_connect">لغو</string>
+    <string name="download">دریافت</string>
+    <string name="upload">ارسال</string>
+    <string name="live_traffic">ترافیک زنده</string>
+    <string name="total_received">دریافت‌شده</string>
+    <string name="total_sent">ارسال‌شده</string>
+    <string name="session_time">مدت اتصال</string>
+    <string name="home_checklist_title">قبل از اتصال</string>
+    <string name="guide_step1">USB Debugging را روی این گوشی روشن کن</string>
+    <string name="guide_step2">گوشی را با کابل داده به کامپیوتر وصل کن</string>
+    <string name="guide_step3">برنامه‌ی کابل اینترنت را روی کامپیوتر باز کن</string>
+    <string name="guide_step4">اینجا دکمه‌ی بزرگ اتصال را بزن</string>
+    <string name="home_open_guide">راهنمای کامل</string>
+    <string name="usbdebug_title">USB Debugging</string>
+    <string name="usbdebug_on">USB Debugging روشن است</string>
+    <string name="usbdebug_off">USB Debugging خاموش است</string>
+    <string name="usbdebug_hint">گزینه‌های توسعه‌دهنده را باز کن. اگر پیدایش نکردی: درباره‌ی گوشی ← هفت بار روی «شماره‌ی بیلد» بزن و برگرد.</string>
+    <string name="usbdebug_open">باز کردن تنظیمات</string>
+    <string name="vpn_explain_title">اجازه‌ی اتصال VPN؟</string>
+    <string name="vpn_explain_body">اندروید حالا از تو اجازه‌ی اتصال VPN را می‌خواهد. این اتصال فقط برای عبور ترافیک گوشی از کابل USB به کامپیوتر خودت است. هیچ چیز ثبت یا به جای دیگری فرستاده نمی‌شود.</string>
+    <string name="toast_vpn_ready">دسترسی VPN از قبل داده شده است</string>
+    <string name="ob1_title">اینترنت کامپیوتر، روی گوشی تو</string>
+    <string name="ob1_body">کابل اینترنت، اینترنت کامپیوتر را از طریق کابل USB به گوشی می‌رساند. سریع، پایدار و بدون نیاز به وای‌فای.</string>
+    <string name="ob2_title">چطور کار می‌کند؟</string>
+    <string name="ob2_s1">برنامه‌ی کابل اینترنت را روی کامپیوتر ویندوزی نصب کن</string>
+    <string name="ob2_s2">USB Debugging را روشن کن و گوشی را با کابل وصل کن</string>
+    <string name="ob2_s3">اینجا دکمه‌ی اتصال را بزن؛ همین!</string>
+    <string name="ob3_title">دسترسی‌ها، شفاف و ساده</string>
+    <string name="ob3_intro">قبل از اینکه اندروید چیزی بپرسد، دقیقاً می‌گوییم چه چیزی لازم است و چرا.</string>
+    <string name="perm_why_label">چرا لازم است</string>
+    <string name="perm_never_label">چه کارهایی نمی‌کنیم</string>
+    <string name="perm_vpn_title">دسترسی VPN</string>
+    <string name="perm_vpn_why">تا ترافیک گوشی بتواند از کابل USB به کامپیوتر برسد.</string>
+    <string name="perm_vpn_never">هیچ داده‌ای را ثبت، ذخیره یا جایی جز کامپیوتر خودت (از طریق کابل) نمی‌فرستیم.</string>
+    <string name="perm_vpn_when">اندروید اولین بار که وصل می‌شوی این را می‌پرسد.</string>
+    <string name="perm_notif_title">اعلان‌ها (اختیاری)</string>
+    <string name="perm_notif_why">برای نمایش وضعیت اتصال و دکمه‌ی قطع اتصال هنگام اجرای برنامه.</string>
+    <string name="perm_notif_never">بدون تبلیغ و پیام بازاریابی. می‌توانی رد کنی.</string>
+    <string name="ob_allow_notif">متوجه شدم — اجازه‌ی اعلان</string>
+    <string name="ob4_title">همه‌چیز آماده است</string>
+    <string name="ob4_body">برنامه‌ی کامپیوتر را باز کن، کابل را وصل کن و در صفحه‌ی خانه دکمه‌ی اتصال را بزن.</string>
+    <string name="guide_title">راهنمای USB</string>
+    <string name="guide_sub">هر چه برای اتصال در چند دقیقه لازم است</string>
+    <string name="guide_pc_title">روی کامپیوتر</string>
+    <string name="guide_phone_title">روی گوشی</string>
+    <string name="guide_brand_title">روشن کردن USB Debugging</string>
+    <string name="brand_generic">همه گوشی‌ها</string>
+    <string name="brand_samsung">Samsung</string>
+    <string name="brand_xiaomi">Xiaomi / Redmi / Poco</string>
+    <string name="brand_huawei">Huawei / Honor</string>
+    <string name="brand_oppo">Oppo / Realme / OnePlus</string>
+    <string name="brand_vivo">Vivo / iQOO</string>
+    <string name="brand_trouble">مشکل داری؟</string>
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_sub">اپ را مطابق سلیقه‌ی خودت تنظیم کن</string>
+    <string name="set_group_language">زبان</string>
+    <string name="set_group_appearance">ظاهر</string>
+    <string name="set_group_connection">اتصال</string>
+    <string name="set_group_permissions">دسترسی‌ها</string>
+    <string name="set_group_system">میانبرهای سیستم</string>
+    <string name="set_group_other">سایر</string>
+    <string name="lang_title">زبان برنامه</string>
+    <string name="lang_sub">به‌صورت پیش‌فرض از زبان گوشی پیروی می‌کند</string>
+    <string name="lang_system">سیستم</string>
+    <string name="lang_en">English</string>
+    <string name="lang_fa">فارسی</string>
+    <string name="theme_title">پوسته</string>
+    <string name="theme_system">سیستم</string>
+    <string name="theme_dark">تیره</string>
+    <string name="theme_light">روشن</string>
+    <string name="dns_title">سرور DNS</string>
+    <string name="dns_sub">برای تبدیل نام سایت‌ها هنگام اتصال</string>
+    <string name="dns_google">Google</string>
+    <string name="dns_cloudflare">Cloudflare</string>
+    <string name="dns_quad9">Quad9</string>
+    <string name="dns_custom">دلخواه</string>
+    <string name="dns_custom_hint">آدرس DNS (مثلاً 8.8.4.4)</string>
+    <string name="dns_invalid">آدرس نامعتبر است؛ از DNS گوگل استفاده می‌شود</string>
+    <string name="dns_locked_hint">DNS فقط هنگام قطع بودن قابل تغییر است</string>
+    <string name="keep_screen_title">روشن ماندن صفحه</string>
+    <string name="keep_screen_sub">هنگام اتصال</string>
+    <string name="haptic_title">لرزش لمسی</string>
+    <string name="haptic_sub">لرزش ملایم هنگام زدن دکمه‌ی اتصال</string>
+    <string name="graph_title">نمودار زنده‌ی ترافیک</string>
+    <string name="graph_sub">نمایش نمودار در صفحه‌ی خانه</string>
+    <string name="units_title">واحد سرعت</string>
+    <string name="units_mbs">MB/s</string>
+    <string name="units_mbps">Mbps</string>
+    <string name="perm_status_granted">داده شده</string>
+    <string name="perm_status_missing">داده نشده</string>
+    <string name="perm_grant">اعطا</string>
+    <string name="perm_vpn_set_sub">به اپ اجازه می‌دهد ترافیک را از کابل عبور دهد</string>
+    <string name="perm_notif_set_sub">وضعیت اتصال و دکمه‌ی قطع اتصال</string>
+    <string name="sys_vpn_title">تنظیمات VPN</string>
+    <string name="sys_vpn_sub">گزینه‌ی Always-on VPN را برای این اپ روشن کن</string>
+    <string name="sys_notif_title">تنظیمات اعلان</string>
+    <string name="sys_notif_sub">نحوه‌ی اعلان این اپ را مشخص کن</string>
+    <string name="sys_battery_title">بهینه‌سازی باتری</string>
+    <string name="sys_battery_sub">برای پایدار ماندن اتصال در پس‌زمینه</string>
+    <string name="sys_dev_title">گزینه‌های توسعه‌دهنده</string>
+    <string name="sys_dev_sub">روشن کردن USB Debugging</string>
+    <string name="other_intro_title">نمایش دوباره‌ی معرفی</string>
+    <string name="other_intro_sub">راهنمای خوش‌آمد و دسترسی‌ها را دوباره ببین</string>
+    <string name="other_reset_title">بازنشانی تنظیمات</string>
+    <string name="other_reset_sub">همه‌ی گزینه‌ها به حالت پیش‌فرض برمی‌گردد</string>
+    <string name="reset_confirm_title">بازنشانی همه‌ی تنظیمات؟</string>
+    <string name="reset_confirm_body">زبان، پوسته و گزینه‌های اتصال به حالت پیش‌فرض برمی‌گردد.</string>
+    <string name="reset_confirm_yes">بازنشانی</string>
+    <string name="about_title">درباره‌ی ما</string>
+    <string name="about_version">نسخه‌ی %1$s (%2$d)</string>
+    <string name="about_desc">کابل اینترنت به گوشی اجازه می‌دهد از اینترنت کامپیوتر از طریق کابل USB استفاده کند؛ سریع، پایدار و بدون نیاز به وای‌فای یا اینترنت سیم‌کارت.</string>
+    <string name="about_features_title">امکانات</string>
+    <string name="about_how_title">چطور کار می‌کند؟</string>
+    <string name="about_how_body">گوشی یک رابط VPN محلی می‌سازد و ترافیکش را از کابل USB (adb reverse) به یک برنامه‌ی کوچک رله روی کامپیوتر می‌فرستد؛ کامپیوتر از طرف گوشی به اینترنت وصل می‌شود.</string>
+    <string name="about_privacy_title">حریم خصوصی</string>
+    <string name="about_privacy_body">کابل اینترنت هیچ چیز جمع‌آوری نمی‌کند. داده، تاریخچه‌ی مرور یا موقعیت تو را ثبت، ذخیره یا ارسال نمی‌کند. ترافیک فقط از کابل USB به کامپیوتر خودت می‌رسد. تبلیغ، آمارگیر و حساب کاربری ندارد.</string>
+    <string name="about_oss_title">متن‌باز</string>
+    <string name="about_oss_body">از پروتکل رله‌ی Gnirehtet ساخته‌ی Genymobile (مجوز Apache 2.0) و Android Platform Tools (مجوز Apache 2.0) استفاده می‌کند.</string>
+    <string name="about_rate">امتیاز در کافه‌بازار</string>
+    <string name="about_share">معرفی به دوستان</string>
+    <string name="about_share_text">با «کابل اینترنت»، اینترنت کامپیوترت را از طریق USB روی گوشی داشته باش: %1$s</string>
+    <string name="about_contact_title">ارتباط با ما</string>
+    <string name="about_telegram">تلگرام</string>
+    <string name="about_email">ایمیل</string>
+    <string name="about_website">وب‌سایت</string>
+    <string-array name="g_pc">
+        <item>برنامه‌ی کابل اینترنت را روی کامپیوتر ویندوزی نصب و باز کن.</item>
+        <item>گوشی را با کابل USB که داده منتقل می‌کند وصل کن (نه کابلی که فقط شارژ می‌کند).</item>
+        <item>صبر کن برنامه بنویسد گوشی آماده است.</item>
+    </string-array>
+    <string-array name="g_generic">
+        <item>تنظیمات را باز کن و به «درباره‌ی گوشی» (About phone) برو.</item>
+        <item>هفت بار پشت سر هم روی «شماره‌ی بیلد» (Build number) بزن. اگر رمز خواست وارد کن.</item>
+        <item>به تنظیمات برگرد و «گزینه‌های توسعه‌دهنده» (Developer options) را باز کن؛ معمولاً داخل «سیستم» یا «تنظیمات اضافی» است.</item>
+        <item>گزینه‌ی «USB debugging» را روشن کن و تأیید بزن.</item>
+        <item>گوشی را با کابل به کامپیوتر وصل کن.</item>
+        <item>روی پیام «Allow USB debugging?» تیک «Always allow» را بزن و Allow را انتخاب کن.</item>
+    </string-array>
+    <string-array name="g_samsung">
+        <item>تنظیمات ← درباره‌ی گوشی ← اطلاعات نرم‌افزار (Software information).</item>
+        <item>هفت بار روی «شماره‌ی بیلد» بزن و رمز گوشی را وارد کن.</item>
+        <item>برگرد؛ «گزینه‌های توسعه‌دهنده» پایین تنظیمات ساخته شده است.</item>
+        <item>«USB debugging» را روشن کن.</item>
+        <item>کابل را وصل کن و Allow را بزن (تیک Always allow).</item>
+        <item>اگر پیام نیامد: تنظیمات ← امنیت و حریم خصوصی ← Auto Blocker را خاموش کن (یا گزینه‌ی Block commands via USB cable را).</item>
+    </string-array>
+    <string-array name="g_xiaomi">
+        <item>تنظیمات ← درباره‌ی گوشی.</item>
+        <item>هفت بار روی «نسخه‌ی MIUI» (یا «نسخه‌ی HyperOS») بزن.</item>
+        <item>تنظیمات ← تنظیمات اضافی ← گزینه‌های توسعه‌دهنده.</item>
+        <item>USB debugging و Install via USB و USB debugging (Security settings) را روشن کن (هر کدام که داری).</item>
+        <item>کابل را وصل کن و Allow را بزن. بدون «Install via USB» نصب اپ از کامپیوتر رد می‌شود.</item>
+    </string-array>
+    <string-array name="g_huawei">
+        <item>تنظیمات ← درباره‌ی گوشی.</item>
+        <item>هفت بار روی «شماره‌ی بیلد» بزن.</item>
+        <item>تنظیمات ← سیستم و به‌روزرسانی ← گزینه‌های توسعه‌دهنده.</item>
+        <item>«USB debugging» را روشن کن (و اگر بود «Allow ADB debugging in charge only mode»).</item>
+        <item>کابل را وصل کن، حالت USB را روی «انتقال فایل» بگذار و Allow را بزن.</item>
+    </string-array>
+    <string-array name="g_oppo">
+        <item>تنظیمات ← درباره‌ی دستگاه ← نسخه (Version).</item>
+        <item>هفت بار روی «شماره‌ی بیلد» بزن.</item>
+        <item>تنظیمات ← تنظیمات اضافی ← گزینه‌های توسعه‌دهنده.</item>
+        <item>«USB debugging» را روشن کن.</item>
+        <item>کابل را وصل کن و Allow را بزن. اگر نصب اپ رد شد، «Install via USB» یا «Disable permission monitoring» را هم روشن کن.</item>
+    </string-array>
+    <string-array name="g_vivo">
+        <item>تنظیمات ← تنظیمات بیشتر (یا سیستم) ← درباره‌ی گوشی.</item>
+        <item>هفت بار روی «نسخه‌ی نرم‌افزار» یا «شماره‌ی بیلد» بزن.</item>
+        <item>برگرد و «گزینه‌های توسعه‌دهنده» را باز کن.</item>
+        <item>«USB debugging» را روشن کن.</item>
+        <item>کابل را وصل کن و Allow را بزن.</item>
+    </string-array>
+    <string-array name="g_trouble">
+        <item>کابل: بعضی کابل‌ها فقط شارژ می‌کنند. از کابل اصلی گوشی استفاده کن.</item>
+        <item>پورت: گوشی را مستقیم به کامپیوتر وصل کن، نه به هاب.</item>
+        <item>صفحه: گوشی را باز و روشن نگه دار.</item>
+        <item>حالت USB: نوار اعلان را بکش پایین و «انتقال فایل» (MTP) را انتخاب کن.</item>
+        <item>پیام Allow نمی‌آید: در گزینه‌های توسعه‌دهنده «Revoke USB debugging authorizations» را بزن، USB debugging را خاموش و روشن کن و کابل را دوباره وصل کن.</item>
+        <item>درایور: Windows Update را اجرا کن، یا برنامه‌ی رسمی برند گوشی (مثل Samsung Smart Switch) را یک بار نصب کن تا درایورش نصب شود.</item>
+        <item>برنامه‌های دیگر که از adb استفاده می‌کنند (Mi PC Suite، HiSuite، Android Studio) ممکن است اتصال را اشغال کنند. آن‌ها را ببند یا گوشی و کامپیوتر را ری‌استارت کن.</item>
+    </string-array>
+    <string-array name="about_features">
+        <item>اشتراک اینترنت کامپیوتر از طریق USB</item>
+        <item>اتصال پایدار با تأخیر کم</item>
+        <item>سرعت و نمودار زنده‌ی ترافیک</item>
+        <item>DNS دلخواه (Google، Cloudflare، Quad9)</item>
+        <item>فارسی و انگلیسی، پوسته‌ی تیره و روشن</item>
+        <item>بدون تبلیغ، بدون حساب کاربری، بدون جمع‌آوری داده</item>
+    </string-array>
+</resources>

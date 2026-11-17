@@ -1,0 +1,92 @@
+name: Build APK and Windows app
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UsbNet-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+  windows:
+    needs: android
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: UsbNet-debug-apk
+          path: apk
+
+      - name: Collect adb, gnirehtet and the phone app
+        shell: pwsh
+        run: |
+          $tools = "pc/CableInternet/tools"
+          New-Item -ItemType Directory -Force -Path "$tools/licenses" | Out-Null
+
+          # adb (Android Platform Tools)
+          Invoke-WebRequest "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -OutFile pt.zip
+          Expand-Archive pt.zip -DestinationPath pt -Force
+          foreach ($f in "adb.exe","AdbWinApi.dll","AdbWinUsbApi.dll") {
+            Copy-Item "pt/platform-tools/$f" $tools
+          }
+          Copy-Item "pt/platform-tools/NOTICE.txt" "$tools/licenses/android-platform-tools-NOTICE.txt"
+
+          # gnirehtet relay
+          gh release download --repo Genymobile/gnirehtet --pattern "gnirehtet-rust-win64*.zip" --dir gn --clobber
+          Expand-Archive (Get-ChildItem gn/*.zip | Select-Object -First 1).FullName -DestinationPath gn/x -Force
+          $exe = Get-ChildItem gn/x -Recurse -Filter gnirehtet.exe | Select-Object -First 1
+          Copy-Item $exe.FullName $tools
+          $lic = Get-ChildItem gn/x -Recurse -Filter "LICENSE*" | Select-Object -First 1
+          if ($lic) { Copy-Item $lic.FullName "$tools/licenses/gnirehtet-LICENSE.txt" }
+
+          # phone app + its version code
+          Copy-Item apk/app-debug.apk "$tools/app.apk"
+          $gradle = Get-Content app/build.gradle.kts -Raw
+          if ($gradle -match 'versionCode\s*=\s*(\d+)') { Set-Content "$tools/app.version" $Matches[1] -NoNewline }
+
+          foreach ($f in "adb.exe","gnirehtet.exe","app.apk") {
+            if (-not (Test-Path "$tools/$f")) { throw "missing $f" }
+          }
+          Get-ChildItem $tools -Recurse | Select-Object FullName, Length
+
+      - name: Build Windows app (.NET Framework 4.8, tiny exe)
+        run: dotnet build pc/CableInternet/CableInternet.csproj -c Release -o pc/publish
+
+      - name: Add tools next to the exe
+        shell: pwsh
+        run: |
+          Copy-Item pc/CableInternet/tools pc/publish/tools -Recurse
+          Get-ChildItem pc/publish -Recurse -File | Measure-Object Length -Sum | ForEach-Object { "Total MB: " + [math]::Round($_.Sum/1MB,1) }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CableInternet-Windows-portable
+          path: pc/publish
+
+      - name: Build installer
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" pc/installer/CableInternet.iss
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CableInternet-Windows-Setup
+          path: pc/installer/Output/*.exe
+          if-no-files-found: warn

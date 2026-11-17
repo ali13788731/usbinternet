@@ -1,0 +1,12 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+
+# Windows app build output
+pc/CableInternet/tools/
+pc/CableInternet/bin/
+pc/CableInternet/obj/
+pc/publish/
+pc/installer/Output/
