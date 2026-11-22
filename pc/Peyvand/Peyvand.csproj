@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 is built into Windows 10/11, so the exe stays tiny (no runtime is bundled). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Peyvand</AssemblyName>
+    <RootNamespace>Peyvand</RootNamespace>
+    <Version>1.0.0</Version>
+    <Prefer32Bit>false</Prefer32Bit>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="Exists('app.ico')">
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Vazirmatn (SIL OFL) is embedded so the UI looks the same on every PC -->
+  <ItemGroup>
+    <EmbeddedResource Include="fonts\Vazirmatn-Regular.ttf" LogicalName="Vazirmatn-Regular.ttf" />
+    <EmbeddedResource Include="fonts\Vazirmatn-Bold.ttf" LogicalName="Vazirmatn-Bold.ttf" />
+  </ItemGroup>
+
+</Project>
