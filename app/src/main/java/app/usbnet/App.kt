@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,13 +53,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-enum class Tab { Home, Guide, Settings, About }
+enum class Tab { Home, Pro, Guide, Settings }
 
 private enum class Phase { Splash, Onboarding, Main }
 
 /** Root of the UI: splash -> (first run) onboarding -> main app with the floating menu. */
 @Composable
-fun UsbNetApp(settings: SettingsState, startInMain: Boolean, onRecreate: () -> Unit) {
+fun UsbNetApp(
+    settings: SettingsState,
+    startInMain: Boolean,
+    route: String?,
+    onRouteConsumed: () -> Unit,
+    onRecreate: () -> Unit,
+) {
     val ctx = LocalContext.current
     var phase by remember { mutableStateOf(if (startInMain) Phase.Main else Phase.Splash) }
 
@@ -78,14 +85,22 @@ fun UsbNetApp(settings: SettingsState, startInMain: Boolean, onRecreate: () -> U
             Phase.Main -> MainShell(
                 settings = settings,
                 onRecreate = onRecreate,
-                onReplayIntro = { phase = Phase.Onboarding }
+                onReplayIntro = { phase = Phase.Onboarding },
+                route = route,
+                onRouteConsumed = onRouteConsumed
             )
         }
     }
 }
 
 @Composable
-private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayIntro: () -> Unit) {
+private fun MainShell(
+    settings: SettingsState,
+    onRecreate: () -> Unit,
+    onReplayIntro: () -> Unit,
+    route: String?,
+    onRouteConsumed: () -> Unit,
+) {
     val ctx = LocalContext.current
     val c = LocalAppColors.current
     val snap by TunnelMonitor.snapshot.collectAsState()
@@ -93,6 +108,33 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
     val tab = Tab.values()[tabIndex.coerceIn(0, Tab.values().size - 1)]
     val setTab: (Tab) -> Unit = { tabIndex = it.ordinal }
     var showVpnExplain by remember { mutableStateOf(false) }
+    var settingsPage by rememberSaveable { mutableStateOf(0) }
+    var paywall by remember { mutableStateOf<Int?>(null) }
+    var updateDialog by remember { mutableStateOf<UpdateInfo?>(null) }
+    var pendingOnly by remember { mutableStateOf(false) }
+    val upd by Updates.info.collectAsState()
+    val ent by Billing.state.collectAsState()
+    val reason by TunnelMonitor.stopReason.collectAsState()
+    val forced = upd != null && Updates.required(ctx)
+
+    // Subscription is verified with Cafe Bazaar every time the app comes to the front.
+    LaunchedEffect(Unit) {
+        Updates.checkAsync(ctx) {}
+    }
+    LaunchedEffect(upd) {
+        val i = upd
+        if (i != null && Updates.consumePopup(ctx)) updateDialog = i
+    }
+    LaunchedEffect(route) {
+        when (route) {
+            Notif.ROUTE_PRO -> tabIndex = Tab.Pro.ordinal
+            Notif.ROUTE_UPDATE -> upd?.let { updateDialog = it }
+        }
+        if (route != null) onRouteConsumed()
+    }
+    LaunchedEffect(reason) {
+        if (reason == StopReason.Quota) paywall = R.string.pw_reason_quota
+    }
     var pendingStart by remember { mutableStateOf(false) }
 
     val toastFailed = stringResource(R.string.vpn_failed)
@@ -102,7 +144,7 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            if (pendingStart) TunnelService.start(ctx, Prefs.resolveDns(ctx))
+            if (pendingStart) TunnelService.start(ctx, Prefs.resolveDnsList(ctx), pendingOnly)
         } else {
             Toast.makeText(ctx, toastFailed, Toast.LENGTH_SHORT).show()
         }
@@ -111,8 +153,11 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
 
     val onToggle: () -> Unit = {
         if (snap.state == LinkState.Idle) {
-            if (VpnService.prepare(ctx) == null) {
-                TunnelService.start(ctx, Prefs.resolveDns(ctx))
+            pendingOnly = false
+            if (!ent.pro && Quota.state.value.exhausted) {
+                paywall = R.string.pw_reason_quota
+            } else if (VpnService.prepare(ctx) == null) {
+                TunnelService.start(ctx, Prefs.resolveDnsList(ctx), pendingOnly)
             } else {
                 pendingStart = true
                 showVpnExplain = true
@@ -139,7 +184,11 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
         onDispose { view.keepScreenOn = false }
     }
 
-    BackHandler(enabled = tab != Tab.Home) { setTab(Tab.Home) }
+    BackHandler(enabled = tab != Tab.Home) {
+        if (tab == Tab.Settings && settingsPage != 0) {
+            settingsPage = if (settingsPage == SPage.ROUTING) SPage.CONNECTION else 0
+        } else setTab(Tab.Home)
+    }
 
     val bottomColor = if (c.dark) Color(0xFF0E1530) else Color(0xFFEAEFFC)
 
@@ -170,12 +219,18 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
                     snap = snap,
                     settings = settings,
                     onToggle = onToggle,
-                    onOpenGuide = { setTab(Tab.Guide) }
+                    onOpenGuide = { setTab(Tab.Guide) },
+                    onOpenPro = { setTab(Tab.Pro) }
                 )
+                Tab.Pro -> ProScreen()
                 Tab.Guide -> GuideScreen()
                 Tab.Settings -> SettingsScreen(
                     settings = settings,
                     connected = snap.state != LinkState.Idle,
+                    page = settingsPage,
+                    onPage = { settingsPage = it },
+                    onOpenPro = { setTab(Tab.Pro) },
+                    onPaywall = { paywall = it },
                     onLanguageChange = { lang ->
                         if (lang != settings.language) {
                             settings.updateLanguage(lang)
@@ -189,7 +244,6 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
                         onRecreate()
                     }
                 )
-                Tab.About -> AboutScreen(onReplayIntro = onReplayIntro)
             }
         }
 
@@ -200,6 +254,34 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
         )
+    }
+
+    if (forced) {
+        ForceUpdateScreen(
+            info = upd,
+            connected = snap.state != LinkState.Idle,
+            onUpdateOnlyConnect = {
+                pendingOnly = true
+                if (VpnService.prepare(ctx) == null) {
+                    TunnelService.start(ctx, Prefs.resolveDnsList(ctx), true)
+                    pendingOnly = false
+                } else {
+                    pendingStart = true
+                    showVpnExplain = true
+                }
+            },
+            onStop = { TunnelService.stop(ctx) }
+        )
+    }
+    paywall?.let { r ->
+        PaywallDialog(
+            reason = r,
+            onUpgrade = { paywall = null; setTab(Tab.Pro) },
+            onDismiss = { paywall = null }
+        )
+    }
+    updateDialog?.let { i ->
+        if (!forced) UpdateDialog(i) { updateDialog = null }
     }
 
     if (showVpnExplain) {
@@ -226,7 +308,7 @@ private fun MainShell(settings: SettingsState, onRecreate: () -> Unit, onReplayI
                     if (intent != null) {
                         vpnLauncher.launch(intent)
                     } else {
-                        if (pendingStart) TunnelService.start(ctx, Prefs.resolveDns(ctx))
+                        if (pendingStart) TunnelService.start(ctx, Prefs.resolveDnsList(ctx), pendingOnly)
                         pendingStart = false
                     }
                 }
@@ -247,9 +329,9 @@ private class NavEntry(val tab: Tab, val ic: Ic, val label: Int)
 
 private val navEntries = listOf(
     NavEntry(Tab.Home, Ic.Home, R.string.nav_home),
+    NavEntry(Tab.Pro, Ic.Crown, R.string.nav_pro),
     NavEntry(Tab.Guide, Ic.Guide, R.string.nav_guide),
     NavEntry(Tab.Settings, Ic.Settings, R.string.nav_settings),
-    NavEntry(Tab.About, Ic.About, R.string.nav_about),
 )
 
 /** Floating pill menu with an animated selection. */

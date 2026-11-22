@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 abstract class Item
 {
@@ -302,6 +302,22 @@ sealed class LogItem : Item
     }
 }
 
+sealed class BarItem : Item
+{
+    public Func<float> Value = () => 0f; public Func<Color>? Accent;
+    public override void Paint(Graphics g)
+    {
+        var r = new RectangleF(B.X, B.Y, B.Width - 1, B.Height - 1);
+        float rad = r.Height / 2f;
+        using (var br = new SolidBrush(Pal.Surface2)) Ui.FillRound(g, br, r, rad);
+        float v = Ui.Clamp01(Value());
+        float w = Math.Max(v > 0 ? r.Height : 0, r.Width * v);
+        if (w <= 0) return;
+        var fr = new RectangleF(Ui.Rtl ? r.Right - w : r.X, r.Y, w, r.Height);
+        using (var br = new SolidBrush(Accent != null ? Accent() : Pal.Blue)) Ui.FillRound(g, br, fr, rad);
+    }
+}
+
 /// <summary>A scrolling page of custom-drawn items (no child controls, no flicker).</summary>
 class CanvasPage : Control
 {
@@ -418,7 +434,8 @@ sealed class Sidebar : Control
 {
     public int Index; public event Action<int>? Selected; public Func<Color>? StatusColor; public Func<string>? StatusText;
     float selY; int hover = -1; float hoverT;
-    static readonly Ic[] Icons_ = { Ic.Home, Ic.Guide, Ic.Settings, Ic.Info };
+    public const int Count = 6;
+    static readonly Ic[] Icons_ = { Ic.Home, Ic.Shield, Ic.Guide, Ic.Usb, Ic.Settings, Ic.Info };
     int ItemH => Ui.S(46); int Top0 => Ui.S(112); int Gap => Ui.S(6);
 
     public Sidebar()
@@ -441,7 +458,7 @@ sealed class Sidebar : Control
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
-        int i = (e.Y - Top0) / (ItemH + Gap); bool inside = e.Y >= Top0 && i >= 0 && i < 4 && (e.Y - Top0) % (ItemH + Gap) < ItemH;
+        int i = (e.Y - Top0) / (ItemH + Gap); bool inside = e.Y >= Top0 && i >= 0 && i < Count && (e.Y - Top0) % (ItemH + Gap) < ItemH;
         hover = inside ? i : -1; Cursor = inside ? Cursors.Hand : Cursors.Default;
     }
     protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); hover = -1; Cursor = Cursors.Default; }
@@ -471,7 +488,7 @@ sealed class Sidebar : Control
             float bx = Ui.Rtl ? pr.Right - Ui.S(4) : pr.X;
             using (var br = Ui.Brand(new RectangleF(bx, pr.Y + Ui.S(10), Ui.S(4), pr.Height - Ui.S(20)), 90f)) Ui.FillRound(g, br, new RectangleF(bx, pr.Y + Ui.S(10), Ui.S(4), pr.Height - Ui.S(20)), Ui.S(2));
         }
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < Count; i++)
         {
             float y = TargetY(i); bool on = i == Index;
             if (hover == i && !on) using (var br = new SolidBrush(Pal.Surface2)) Ui.FillRound(g, br, new RectangleF(pad - Ui.S(4), y, w + Ui.S(8) - 1, ItemH), Ui.S(13));
@@ -489,7 +506,6 @@ sealed class Sidebar : Control
         float dx = Ui.Rtl ? sr.Right - Ui.S(22) : sr.X + Ui.S(12);
         using (var br = new SolidBrush(sc)) g.FillEllipse(br, dx, sr.Y + Ui.S(13), Ui.S(8), Ui.S(8));
         Ui.Text(g, StatusText != null ? StatusText() : "", Ui.Font(9), Pal.Text, new RectangleF(sr.X + Ui.S(24), sr.Y, sr.Width - Ui.S(36), sr.Height), Align.Start, true, false, true);
-        Ui.Text(g, Loc.T("designed"), Ui.Font(8.5f), Pal.Muted, new RectangleF(pad, Height - Ui.S(62), Width - pad * 2, Ui.S(20)), Align.Center, false, false, true);
         Ui.Text(g, "v" + Application.ProductVersion.Split('+')[0], Ui.Font(8), Ui.Alpha(Pal.Muted, 160), new RectangleF(pad, Height - Ui.S(40), Width - pad * 2, Ui.S(18)), Align.Center, false, false, false, false);
     }
 }

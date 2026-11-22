@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 static class Program
 {
@@ -11,7 +11,7 @@ static class Program
     {
         Settings.Load();
         Loc.Apply(Settings.Language);
-        using var mutex = new Mutex(true, "CableInternet.PC.SingleInstance", out bool first);
+        using var mutex = new Mutex(true, "Peyvand.PC.SingleInstance", out bool first);
         if (!first)
         {
             MessageBox.Show(Loc.T("running"), Loc.T("app"), MessageBoxButtons.OK, MessageBoxIcon.Information,

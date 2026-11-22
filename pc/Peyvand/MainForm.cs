@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 sealed class MainForm : Form
 {
@@ -23,7 +23,7 @@ sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         DoubleBuffered = true;
 
-        pages = new CanvasPage[] { new HomePage(ctl), new GuidePage(ctl), new SettingsPage(ctl), new AboutPage(ctl) };
+        pages = new CanvasPage[] { new HomePage(ctl), new SubscriptionPage(ctl), new GuidePage(ctl), new RequirementsPage(ctl), new SettingsPage(ctl), new AboutPage(ctl) };
         foreach (var p in pages) { p.Dock = DockStyle.Fill; p.Visible = false; Controls.Add(p); }
         side.Width = Ui.S(236);
         side.StatusColor = () => ctl.Accent;
@@ -35,7 +35,8 @@ sealed class MainForm : Form
         AppBus.LanguageChanged = ApplyLanguage;
         AppBus.ThemeChanged = ApplyTheme;
         ctl.Changed += () => side.Invalidate();
-        ctl.GuideSuggested += () => { if (cur == 0) AppBus.Navigate?.Invoke(1); };
+        ctl.GuideSuggested += () => { if (cur == 0) AppBus.Navigate?.Invoke(2); };
+        ctl.Notify += text => { try { tray.ShowBalloonTip(6000, Loc.T("app"), text, ToolTipIcon.Warning); System.Media.SystemSounds.Exclamation.Play(); } catch { } };
 
         var menu = new ContextMenuStrip();
         miShow.Click += (_, _) => RestoreFromTray();

@@ -33,6 +33,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,6 +67,7 @@ fun HomeScreen(
     settings: SettingsState,
     onToggle: () -> Unit,
     onOpenGuide: () -> Unit,
+    onOpenPro: () -> Unit,
 ) {
     val c = LocalAppColors.current
     val haptic = LocalHapticFeedback.current
@@ -182,6 +184,30 @@ fun HomeScreen(
             }
         }
 
+        val reason by TunnelMonitor.stopReason.collectAsState()
+        if (reason == StopReason.Quota || reason == StopReason.Update || reason == StopReason.Timer) {
+            Reveal(2) {
+                AppCard {
+                    AppText(
+                        stringResource(
+                            when (reason) {
+                                StopReason.Quota -> R.string.stop_quota
+                                StopReason.Update -> R.string.stop_update
+                                else -> R.string.stop_timer
+                            }
+                        ),
+                        size = 14.sp, lineHeight = 21.sp, color = if (reason == StopReason.Timer) c.text else AccentAmber
+                    )
+                    if (reason == StopReason.Quota) {
+                        Spacer(Modifier.height(10.dp))
+                        PrimaryButton(stringResource(R.string.paywall_cta), onOpenPro, Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+
+        Reveal(3) { UsageCard(onUpgrade = onOpenPro) }
+
         AnimatedVisibility(
             visible = connected,
             enter = fadeIn(tween(400)) + expandVertically(tween(400)),
@@ -244,18 +270,6 @@ fun HomeScreen(
             exit = fadeOut(tween(250)) + shrinkVertically(tween(250))
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                AppCard {
-                    AppText(
-                        stringResource(R.string.home_checklist_title),
-                        size = 16.sp,
-                        weight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    StepItem(1, stringResource(R.string.guide_step1))
-                    StepItem(2, stringResource(R.string.guide_step2))
-                    StepItem(3, stringResource(R.string.guide_step3))
-                    StepItem(4, stringResource(R.string.guide_step4))
-                }
                 AppCard {
                     UsbDebugRow()
                 }

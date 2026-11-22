@@ -31,6 +31,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,61 +44,50 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Animated start screen: logo with a pulsing glow, the app name, and a typewriter line
- * ("Designed by Mr.PC") under the logo.
+ * Two stages: (1) only the logo with a pulsing glow, (2) the logo fades away and an animated scene
+ * (phone - cable - computer with packets flowing) appears with the app name and, once in the whole app,
+ * the "Designed by" credit.
  */
 @Composable
 fun SplashScreen(versionName: String, onFinished: () -> Unit) {
     val designed = stringResource(R.string.splash_designed_by)
     val appName = stringResource(R.string.app_name)
+    val tagline = stringResource(R.string.app_tagline)
     val version = stringResource(R.string.splash_version, versionName)
 
     val logoScale = remember { Animatable(0.55f) }
     val logoAlpha = remember { Animatable(0f) }
-    val nameAlpha = remember { Animatable(0f) }
-    val tagAlpha = remember { Animatable(0f) }
+    val stage2 = remember { Animatable(0f) }
     val typed = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        launch { logoAlpha.animateTo(1f, tween(600)) }
+        launch { logoAlpha.animateTo(1f, tween(500)) }
         launch {
-            logoScale.animateTo(
-                1f,
-                spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
-            )
+            logoScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
         }
-        launch {
-            delay(500)
-            nameAlpha.animateTo(1f, tween(600))
-        }
-        launch {
-            delay(1000)
-            tagAlpha.animateTo(1f, tween(300))
-            typed.animateTo(
-                designed.length.toFloat(),
-                tween(designed.length * 60, easing = LinearEasing)
-            )
-        }
-        delay(2900)
+        delay(1500)
+        // stage 2: logo disappears, scene appears
+        launch { logoAlpha.animateTo(0f, tween(450)) }
+        launch { stage2.animateTo(1f, tween(700)) }
+        delay(900)
+        typed.animateTo(designed.length.toFloat(), tween(designed.length * 55 + 1, easing = LinearEasing))
+        delay(900)
         onFinished()
     }
 
     val infinite = rememberInfiniteTransition(label = "splash")
     val pulse by infinite.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
+        initialValue = 0f, targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Restart),
         label = "pulse"
     )
-    val shimmer by infinite.animateFloat(
-        initialValue = 0.65f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-        label = "shimmer"
+    val flow by infinite.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Restart),
+        label = "flow"
     )
 
     val shownChars = typed.value.toInt().coerceIn(0, designed.length)
-    val progress = if (designed.isEmpty()) 0f else shownChars.toFloat() / designed.length.toFloat()
 
     Box(
         Modifier
@@ -103,65 +95,73 @@ fun SplashScreen(versionName: String, onFinished: () -> Unit) {
             .background(Brush.verticalGradient(listOf(Color(0xFF0B1020), Color(0xFF171C45)))),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(280.dp), contentAlignment = Alignment.Center) {
-                Canvas(Modifier.size(280.dp)) {
-                    val half = size.minDimension / 2f
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            listOf(BrandViolet.copy(alpha = 0.35f * logoAlpha.value), Color.Transparent),
-                            center = center,
-                            radius = half
-                        ),
-                        radius = half,
-                        center = center
-                    )
-                    for (k in 0..1) {
-                        val p = (pulse + k * 0.5f) % 1f
-                        val r = half * (0.45f + 0.55f * p)
-                        drawCircle(
-                            color = BrandBlue.copy(alpha = (1f - p) * 0.4f * logoAlpha.value),
-                            radius = r,
-                            center = center,
-                            style = Stroke(width = 2.dp.toPx())
-                        )
-                    }
-                }
-                LogoMark(
-                    size = 112.dp,
-                    modifier = Modifier
-                        .scale(logoScale.value)
-                        .alpha(logoAlpha.value)
+        // Stage 1: logo
+        Box(Modifier.size(280.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.size(280.dp)) {
+                val half = size.minDimension / 2f
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(BrandViolet.copy(alpha = 0.35f * logoAlpha.value), Color.Transparent),
+                        center = center, radius = half
+                    ),
+                    radius = half, center = center
                 )
+                for (k in 0..1) {
+                    val p = (pulse + k * 0.5f) % 1f
+                    drawCircle(
+                        color = BrandBlue.copy(alpha = (1f - p) * 0.4f * logoAlpha.value),
+                        radius = half * (0.45f + 0.55f * p), center = center,
+                        style = Stroke(width = 2.dp.toPx())
+                    )
+                }
             }
+            LogoMark(size = 112.dp, modifier = Modifier.scale(logoScale.value).alpha(logoAlpha.value))
+        }
 
+        // Stage 2: animated scene, no logo
+        Column(
+            Modifier.alpha(stage2.value),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Canvas(Modifier.width(280.dp).height(120.dp)) {
+                val y = size.height / 2f
+                val left = 44.dp.toPx()
+                val right = size.width - 44.dp.toPx()
+                // cable
+                drawLine(Color(0xFF3A4680), Offset(left, y), Offset(right, y), strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round)
+                // packets
+                for (k in 0..3) {
+                    val p = (flow + k * 0.25f) % 1f
+                    val x = left + (right - left) * p
+                    val a = (1f - kotlin.math.abs(p - 0.5f) * 1.2f).coerceIn(0.15f, 1f)
+                    drawCircle(BrandBlue.copy(alpha = a), radius = 5.dp.toPx(), center = Offset(x, y))
+                }
+                // phone
+                drawRoundRect(
+                    BrandViolet, topLeft = Offset(left - 30.dp.toPx(), y - 30.dp.toPx()),
+                    size = Size(26.dp.toPx(), 60.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
+                    style = Stroke(width = 3.dp.toPx())
+                )
+                // computer
+                drawRoundRect(
+                    BrandBlue, topLeft = Offset(right + 6.dp.toPx(), y - 24.dp.toPx()),
+                    size = Size(40.dp.toPx(), 30.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx()),
+                    style = Stroke(width = 3.dp.toPx())
+                )
+                drawLine(BrandBlue, Offset(right + 26.dp.toPx(), y + 6.dp.toPx()), Offset(right + 26.dp.toPx(), y + 16.dp.toPx()), strokeWidth = 3.dp.toPx())
+                drawLine(BrandBlue, Offset(right + 14.dp.toPx(), y + 17.dp.toPx()), Offset(right + 38.dp.toPx(), y + 17.dp.toPx()), strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round)
+            }
+            Spacer(Modifier.height(10.dp))
+            AppText(appName, size = 32.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
-            AppText(
-                appName,
-                modifier = Modifier.alpha(nameAlpha.value),
-                size = 30.sp,
-                weight = FontWeight.Bold,
-                color = Color.White,
-                align = TextAlign.Center
-            )
-            Spacer(Modifier.height(18.dp))
+            AppText(tagline, size = 14.sp, color = Color(0xFF8E9BC8), align = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
             AppText(
                 designed.take(shownChars),
-                modifier = Modifier
-                    .height(24.dp)
-                    .offset(y = ((1f - tagAlpha.value) * 12f).dp)
-                    .alpha(tagAlpha.value * shimmer),
-                size = 16.sp,
-                weight = FontWeight.Medium,
-                color = Color(0xFFB9C4FF),
-                align = TextAlign.Center
-            )
-            Spacer(Modifier.height(8.dp))
-            Box(
-                Modifier
-                    .width((72f * progress).dp)
-                    .height(3.dp)
-                    .background(BrandGradient)
+                modifier = Modifier.height(24.dp),
+                size = 16.sp, weight = FontWeight.Medium, color = Color(0xFFB9C4FF), align = TextAlign.Center
             )
         }
 
@@ -171,9 +171,8 @@ fun SplashScreen(versionName: String, onFinished: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
                 .padding(bottom = 28.dp)
-                .alpha(nameAlpha.value * 0.8f),
-            size = 12.sp,
-            color = Color(0xFF8E9BC8)
+                .alpha(stage2.value * 0.8f),
+            size = 12.sp, color = Color(0xFF8E9BC8)
         )
     }
 }

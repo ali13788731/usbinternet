@@ -5,9 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
-enum Phase { ToolsMissing, Starting, NoDevice, Unauthorized, Offline, Preparing, Failed, Ready, WaitingPhone, Connected }
+enum Phase { ToolsMissing, Starting, NoDevice, Unauthorized, Offline, Preparing, Failed, Ready, WaitingPhone, Connected, Blocked }
+
+enum BlockReason { None, Quota, Update }
 
 /// <summary>The connection state machine (adb polling, app install, adb reverse, relay). No UI code.</summary>
 sealed class Controller : IDisposable
@@ -19,6 +21,8 @@ sealed class Controller : IDisposable
     public readonly RelayManager Relay = new();
     public event Action? Changed;
     public event Action? GuideSuggested;
+    public event Action<string>? Notify;
+    public BlockReason Block;
 
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 1500 };
     bool busy, guideShown, relayAllowed = true, disposed;
@@ -30,6 +34,10 @@ sealed class Controller : IDisposable
     public async void Start()
     {
         if (!Paths.ToolsPresent) { Set(Phase.ToolsMissing); return; }
+        Usage.Start();
+        Usage.Changed += () => Changed?.Invoke();
+        UpdateCheck.Changed += () => Changed?.Invoke();
+        UpdateCheck.CheckAsync();
         await Adb.StartServerAsync();
         if (disposed) return;
         timer.Start();
@@ -49,7 +57,8 @@ sealed class Controller : IDisposable
         Phase.ToolsMissing => "ph_tools_t", Phase.Starting => "ph_start_t",
         Phase.NoDevice => NoDeviceTicks >= 6 ? "ph_nodev2_t" : "ph_nodev_t",
         Phase.Unauthorized => "ph_auth_t", Phase.Offline => "ph_off_t", Phase.Preparing => "ph_prep_t",
-        Phase.Failed => "ph_fail_t", Phase.Ready => "ph_ready_t", Phase.WaitingPhone => "ph_wait_t", _ => "ph_conn_t",
+        Phase.Failed => "ph_fail_t", Phase.Ready => "ph_ready_t", Phase.WaitingPhone => "ph_wait_t",
+        Phase.Blocked => Block == BlockReason.Update ? "ph_blk_u_t" : "ph_blk_q_t", _ => "ph_conn_t",
     });
 
     public string Sub => Phase == Phase.Failed ? Loc.T(FailKey ?? "e_install") : Loc.T(Phase switch
@@ -57,13 +66,14 @@ sealed class Controller : IDisposable
         Phase.ToolsMissing => "ph_tools_s", Phase.Starting => "ph_start_s",
         Phase.NoDevice => NoDeviceTicks >= 6 ? "ph_nodev2_s" : "ph_nodev_s",
         Phase.Unauthorized => "ph_auth_s", Phase.Offline => "ph_off_s", Phase.Preparing => "ph_prep_s",
-        Phase.Ready => "ph_ready_s", Phase.WaitingPhone => "ph_wait_s", _ => "ph_conn_s",
+        Phase.Ready => "ph_ready_s", Phase.WaitingPhone => "ph_wait_s",
+        Phase.Blocked => Block == BlockReason.Update ? "ph_blk_u_s" : "ph_blk_q_s", _ => "ph_conn_s",
     });
 
     public RingMode Mode => Phase switch
     {
         Phase.Connected => RingMode.Ok, Phase.Failed or Phase.ToolsMissing => RingMode.Error,
-        Phase.Unauthorized or Phase.Offline or Phase.WaitingPhone or Phase.Ready => RingMode.Action,
+        Phase.Unauthorized or Phase.Offline or Phase.WaitingPhone or Phase.Ready or Phase.Blocked => RingMode.Action,
         _ => RingMode.Search,
     };
 
@@ -77,7 +87,7 @@ sealed class Controller : IDisposable
             Phase.NoDevice or Phase.Starting or Phase.ToolsMissing => 0,
             Phase.Unauthorized or Phase.Offline => 1,
             Phase.Preparing or Phase.Failed => 2,
-            Phase.Ready or Phase.WaitingPhone => 3,
+            Phase.Ready or Phase.WaitingPhone or Phase.Blocked => 3,
             _ => 4,
         };
         if (Phase == Phase.Failed && i == 2) return 3;
@@ -123,10 +133,28 @@ sealed class Controller : IDisposable
         Serial = serial;
         if (failedSerial == serial) { Set(Phase.Failed); return; }
         if (preparedSerial != serial) { await PrepareAsync(serial); return; }
+        var blk = CheckBlocked();
+        if (blk != BlockReason.None)
+        {
+            bool first = Phase != Phase.Blocked || Block != blk;
+            Block = blk; Relay.Stop(); Set(Phase.Blocked);
+            if (first) Notify?.Invoke(Loc.T(blk == BlockReason.Update ? "ph_blk_u_t" : "ph_blk_q_t"));
+            return;
+        }
+        if (Phase == Phase.Blocked) Block = BlockReason.None;
         if (!relayAllowed && !Settings.AutoRelay) { Set(Phase.Ready); return; }
         if (!Relay.Running) Relay.Start();
         if (tick % 5 == 0 && !RelayManager.PhoneConnected() && !await Adb.HasReverseAsync(serial)) await Adb.ReverseAsync(serial);
         Set(RelayManager.PhoneConnected() ? Phase.Connected : Phase.WaitingPhone);
+    }
+
+    /// <summary>Sharing stops when the free allowance is used up or a required update is missing (Pro and update-only mode are exempt).</summary>
+    static BlockReason CheckBlocked()
+    {
+        if (Usage.UpdateOnly && Usage.PhoneLinked) return BlockReason.None;
+        if (UpdateCheck.Required) return BlockReason.Update;
+        if (Usage.PhoneLinked && Usage.Exhausted) return BlockReason.Quota;
+        return BlockReason.None;
     }
 
     async Task PrepareAsync(string serial)
@@ -189,12 +217,13 @@ sealed class Controller : IDisposable
     public string Diagnostics()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Cable Internet " + Application.ProductVersion.Split('+')[0]);
+        sb.AppendLine("Peyvand " + Application.ProductVersion.Split('+')[0]);
         sb.AppendLine("Windows: " + WindowsName());
         sb.AppendLine(".NET Framework: " + Environment.Version);
         sb.AppendLine("Phase: " + Phase + "  Serial: " + (Serial ?? "-") + "  Phone: " + PhoneText);
         sb.AppendLine("Relay running: " + Relay.Running + "  Phone connected to relay: " + RelayManager.PhoneConnected());
         sb.AppendLine("Tools present: " + Paths.ToolsPresent + "  APK: " + File.Exists(Paths.Apk) + "  APK version: " + Adb.BundledVersion());
+        sb.AppendLine("Usage: " + Usage.Used + "/" + Usage.Limit + " period " + Usage.Period + " pro " + Usage.Pro + " linked " + Usage.PhoneLinked + " block " + Block);
         sb.AppendLine("--- log ---"); sb.AppendLine(Relay.LogText);
         return sb.ToString();
     }
@@ -211,6 +240,6 @@ sealed class Controller : IDisposable
 
     public void Dispose()
     {
-        disposed = true; timer.Stop(); Relay.Stop(); Adb.KillServer();
+        disposed = true; timer.Stop(); Relay.Stop(); Usage.Stop(); Adb.KillServer();
     }
 }

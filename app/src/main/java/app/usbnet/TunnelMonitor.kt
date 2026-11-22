@@ -6,6 +6,9 @@ import java.util.concurrent.atomic.AtomicLong
 
 enum class LinkState { Idle, Starting, WaitingForPc, Connected }
 
+/** Why the tunnel was stopped by the app itself (the UI reacts once and clears it). */
+enum class StopReason { None, User, Quota, Update, Timer }
+
 data class Snapshot(
     val state: LinkState = LinkState.Idle,
     val downBps: Long = 0,
@@ -28,6 +31,8 @@ object TunnelMonitor {
 
     private val _snapshot = MutableStateFlow(Snapshot())
     val snapshot: StateFlow<Snapshot> = _snapshot
+
+    val stopReason = MutableStateFlow(StopReason.None)
 
     private val down = AtomicLong()
     private val up = AtomicLong()

@@ -46,6 +46,7 @@ private val brandGuides = listOf(
 
 @Composable
 fun GuideScreen() {
+    var section by remember { mutableIntStateOf(0) }
     val ctx = LocalContext.current
     val c = LocalAppColors.current
     var selected by remember { mutableIntStateOf(0) }
@@ -64,6 +65,21 @@ fun GuideScreen() {
         }
 
         Reveal(1) {
+            Segmented(
+                options = listOf(
+                    stringResource(R.string.guide_tab_full),
+                    stringResource(R.string.guide_tab_pc),
+                    stringResource(R.string.guide_tab_phones)
+                ),
+                selected = section,
+                onSelect = { section = it }
+            )
+        }
+        when (section) {
+            0 -> FullTutorial()
+            1 -> ComputerSection()
+            else -> {
+        Reveal(1) {
             AppCard {
                 UsbDebugRow()
                 Spacer(Modifier.height(12.dp))
@@ -73,19 +89,6 @@ fun GuideScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     color = BrandBlue
                 )
-            }
-        }
-
-        Reveal(2) {
-            AppCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconBadge(Ic.Screen, BrandBlue)
-                    Spacer(Modifier.width(14.dp))
-                    AppText(stringResource(R.string.guide_pc_title), size = 17.sp, weight = FontWeight.Bold)
-                }
-                Spacer(Modifier.height(8.dp))
-                val pcSteps = stringArrayResource(R.array.g_pc)
-                pcSteps.forEachIndexed { i, text -> StepItem(i + 1, text) }
             }
         }
 
@@ -129,6 +132,8 @@ fun GuideScreen() {
                 }
             }
         }
+            }
+        }
     }
 }
 
@@ -139,5 +144,33 @@ private fun TroubleItem(text: String) {
         AppIcon(Ic.About, AccentAmber, size = 22.dp, modifier = Modifier.padding(top = 2.dp))
         Spacer(Modifier.width(12.dp))
         AppText(text, modifier = Modifier.weight(1f), size = 14.sp, color = c.text, lineHeight = 21.sp)
+    }
+}
+
+@Composable
+private fun FullTutorial() {
+    val c = LocalAppColors.current
+    val parts = listOf(
+        Triple(R.string.tut_pc_title, R.array.tut_pc, Ic.Computer),
+        Triple(R.string.tut_phone_title, R.array.tut_phone, Ic.Phone),
+        Triple(R.string.tut_use_title, R.array.tut_use, Ic.Power),
+        Triple(R.string.tut_pro_title, R.array.tut_pro, Ic.Crown),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        parts.forEach { (t, arr, ic) ->
+            AppCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconBadge(ic, BrandBlue)
+                    Spacer(Modifier.width(14.dp))
+                    AppText(stringResource(t), size = 17.sp, weight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(8.dp))
+                stringArrayResource(arr).forEachIndexed { i, text -> StepItem(i + 1, text) }
+            }
+        }
+        AppCard {
+            UsbDebugRow()
+        }
+        AppText(stringResource(R.string.tut_footer), size = 12.sp, color = c.muted, lineHeight = 18.sp)
     }
 }

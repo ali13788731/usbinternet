@@ -3,6 +3,19 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Values can come from gradle.properties, ~/.gradle/gradle.properties or environment variables (CI secrets).
+fun prop(name: String, def: String = ""): String =
+    (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() }
+        ?: System.getenv(name)?.takeIf { it.isNotBlank() }
+        ?: def
+
+val keystorePath = prop("KEYSTORE_FILE")
+val hasKeystore = keystorePath.isNotEmpty() && file(keystorePath).exists()
+val bazaarRsaKey = prop("BAZAAR_RSA_KEY")
+if (bazaarRsaKey.isBlank()) {
+    logger.warn("WARNING: BAZAAR_RSA_KEY is empty - purchases will NOT be signature-checked. Set it before publishing.")
+}
+
 android {
     namespace = "app.usbnet"
     compileSdk = 34
@@ -11,13 +24,28 @@ android {
         applicationId = "app.usbnet"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0"
+        buildConfigField("String", "SKU_MONTHLY", "\"${prop("SKU_MONTHLY", "pro_monthly")}\"")
+        buildConfigField("String", "SKU_YEARLY", "\"${prop("SKU_YEARLY", "pro_yearly")}\"")
+        buildConfigField("String", "BAZAAR_RSA_KEY", "\"$bazaarRsaKey\"")
+    }
+
+    signingConfigs {
+        if (hasKeystore) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = prop("KEYSTORE_PASSWORD")
+                keyAlias = prop("KEY_ALIAS")
+                keyPassword = prop("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (hasKeystore) signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
@@ -29,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
@@ -45,4 +74,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.work:work-runtime:2.9.0")
+    // Cafe Bazaar in-app billing (subscriptions)
+    implementation("com.github.cafebazaar.Poolakey:poolakey:2.2.0")
 }

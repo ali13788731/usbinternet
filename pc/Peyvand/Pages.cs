@@ -6,7 +6,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 static class AppBus
 {
@@ -27,6 +27,7 @@ sealed class HomePage : CanvasPage
     {
         ctl = c;
         ctl.Changed += () => { Sync(); Invalidate(); };
+        UpdateCheck.Changed += () => { if (IsHandleCreated) Rebuild(); };
         clock.Tick += (_, _) => { if (Visible) Invalidate(); };
         clock.Start();
     }
@@ -42,6 +43,7 @@ sealed class HomePage : CanvasPage
         Phase.NoDevice or Phase.Unauthorized or Phase.Offline => "b_guide",
         Phase.Failed => "b_retry",
         Phase.Ready => "b_start",
+        Phase.Blocked => ctl.Block == BlockReason.Update ? "upd_b" : "b_sub",
         _ => "b_restart",
     });
 
@@ -49,8 +51,12 @@ sealed class HomePage : CanvasPage
     {
         switch (ctl.Phase)
         {
-            case Phase.NoDevice: case Phase.Unauthorized: case Phase.Offline: AppBus.Navigate?.Invoke(1); break;
+            case Phase.NoDevice: case Phase.Unauthorized: case Phase.Offline: AppBus.Navigate?.Invoke(2); break;
             case Phase.Ready: ctl.StartSharing(); break;
+            case Phase.Blocked:
+                if (ctl.Block == BlockReason.Update) Links.Open(UpdateCheck.Url.Length > 0 ? UpdateCheck.Url : Brand.PcDownloadUrl);
+                else AppBus.Navigate?.Invoke(1);
+                break;
             default: ctl.Retry(); break;
         }
     }
@@ -58,6 +64,13 @@ sealed class HomePage : CanvasPage
     protected override void Build()
     {
         int y = 0; Header(Loc.T("home_t"), Loc.T("home_s"), ref y);
+        if (UpdateCheck.Available)
+        {
+            Add(new CardItem { B = R(0, y, IW, 60), Radius = 16, Tint = true });
+            Add(new TextItem { Text = string.Format(Loc.T("upd_t"), UpdateCheck.LatestName), F = Ui.Font(10.5f, FontStyle.Bold), Color = Pal.Text, VMid = true, Wrap = false, Ellipsis = true, B = R(20, y, IW - 190, 60) });
+            Add(new ButtonItem { Text = Loc.T("upd_b"), Icon = Ic.Refresh, Style = BtnStyle.Primary, B = R(IW - 156, y + 11, 140, 38), Click = () => Links.Open(UpdateCheck.Url.Length > 0 ? UpdateCheck.Url : Brand.PcDownloadUrl) });
+            y += 76;
+        }
         const int heroH = 226;
         Add(new CardItem { B = R(0, y, IW, heroH), Tint = true, Radius = 22 });
         ring.B = R(24, y + 28, 170, 170); items.Add(ring);
@@ -72,6 +85,15 @@ sealed class HomePage : CanvasPage
         Add(new CardItem { B = R(0, y, IW, 124) });
         Add(new StepperItem { Labels = new[] { Loc.T("st0"), Loc.T("st1"), Loc.T("st2"), Loc.T("st3") }, StateOf = ctl.StepState, B = R(16, y + 14, IW - 32, 98) });
         y += 140;
+
+        // ---- usage (exact, updates every second while the phone is connected)
+        Add(new CardItem { B = R(0, y, IW, 128) });
+        Add(new TextItem { Text = Loc.T("us_t"), F = Ui.Font(10.5f, FontStyle.Bold), Color = Pal.Text, Wrap = false, Ellipsis = true, B = R(20, y + 14, IW / 2, 24) });
+        Add(new TextItem { Provider = () => !Usage.PhoneLinked && Usage.Used == 0 ? Loc.T("us_nolink") : Usage.ProRecent && Usage.Pro ? Loc.T("us_plan_pro") : Loc.T("us_plan_free"), F = Ui.Font(9.5f, FontStyle.Bold), ColorProvider = () => Usage.Pro ? Pal.Green : Pal.Muted, Alignment = Align.End, Wrap = false, Ellipsis = true, B = R(IW / 2, y + 16, IW / 2 - 20, 22) });
+        Add(new TextItem { Provider = () => Usage.Pro ? Fmt.Mb(Usage.Used) + "  ·  " + Loc.T("us_unl") : Fmt.Mb(Usage.Used) + " / " + Fmt.Mb(Usage.Limit), F = Ui.Font(18, FontStyle.Bold), ColorProvider = () => UsageColor(), Wrap = false, Ellipsis = true, ForceLtr = true, B = R(20, y + 42, IW - 40, 36) });
+        Add(new BarItem { Value = () => Usage.Pro ? 0f : (float)Usage.Used / Usage.Limit, Accent = () => UsageColor(), B = R(20, y + 84, IW - 40, 10) });
+        Add(new TextItem { Provider = () => Usage.Pro ? Loc.T("us_exact") : Fmt.Mb(Math.Max(0, Usage.Limit - Usage.Used)) + " " + Loc.T("us_left") + "   ·   " + string.Format(Loc.T("us_renew"), Jalali.DaysUntilRenewal(DateTime.Now)), F = Ui.Font(9), Color = Pal.Muted, Wrap = false, Ellipsis = true, B = R(20, y + 100, IW - 40, 20) });
+        y += 144;
 
         double twid = (IW - 3 * 12) / 4.0;
         var tiles = new (Ic ic, string key, Func<string> val)[]
@@ -97,7 +119,20 @@ sealed class HomePage : CanvasPage
         contentH = y;
     }
 
+    static Color UsageColor() => Usage.Pro ? Pal.Green : Usage.Used >= Usage.Limit ? Pal.Red : Usage.Used >= Usage.Limit * 0.8 ? Pal.Amber : Pal.Blue;
+
     protected override void Dispose(bool disposing) { if (disposing) clock.Dispose(); base.Dispose(disposing); }
+}
+
+static class Fmt
+{
+    /// <summary>Exact size, two decimals in MB so the live counter visibly moves.</summary>
+    public static string Mb(long b) => b < 1024 * 1024 ? (b / 1024.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " KB" : (b / 1048576.0).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + " MB";
+}
+
+static class Links
+{
+    public static void Open(string url) { if (url.Length == 0) return; try { Process.Start(new ProcessStartInfo(url.Contains("@") && !url.StartsWith("http") ? "mailto:" + url : url) { UseShellExecute = true }); } catch { } }
 }
 
 // ===================================================================================== GUIDE
@@ -116,9 +151,9 @@ sealed class GuidePage : CanvasPage
         y += 78;
 
         double x = 0, rowY = y; var f = Ui.Font(9.5f);
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 8; i++)
         {
-            int idx = i; string label = Loc.T("gt" + i);
+            int idx = i; string label = Loc.T(i == 0 ? "gtT" : "gt" + (i - 1));
             double w = Ui.TextW(label, f) / Ui.Scale + 36;
             if (x + w > IW) { x = 0; rowY += 46; }
             Add(new ChipItem { Text = label, Selected = tab == i, B = R(x, rowY, w, 36), Click = () => { tab = idx; Rebuild(); } });
@@ -126,7 +161,7 @@ sealed class GuidePage : CanvasPage
         }
         y = (int)rowY + 56;
 
-        var lines = Loc.Lines("g" + tab); var tf = Ui.Font(10.5f);
+        var lines = Loc.Lines(tab == 0 ? "gT" : "g" + (tab - 1)); var tf = Ui.Font(10.5f);
         for (int i = 0; i < lines.Length; i++)
         {
             int th = Ui.TextH(lines[i], tf, Ui.S(IW - 72)); double h = Math.Max(56, th / Ui.Scale + 26);
@@ -168,6 +203,20 @@ sealed class SettingsPage : CanvasPage
         Add(new ToggleItem { Value = value, B = R(IW - 20 - 48, ry + 20, 48, 26), Changed = v => { set(v); Settings.Save(); } });
     }
 
+    void Gated(string tk, bool value, Action<bool> set)
+    {
+        int ry = RowY(); RowText(ry, Loc.T(tk) + "  ★ Pro", Loc.T(tk + "_d"), 52);
+        Add(new ToggleItem { Value = value, B = R(IW - 20 - 48, ry + 20, 48, 26), Changed = v =>
+        {
+            if (v && !Usage.ProRecent)
+            {
+                MessageBox.Show(Loc.T("pro_only"), Loc.T("app"), MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, Opts());
+                Rebuild(); return;
+            }
+            set(v); Settings.Save();
+        } });
+    }
+
     void Seg(string tk, string[] opts, int idx, Action<int> set)
     {
         int ry = RowY(); RowText(ry, Loc.T(tk), Loc.T(tk + "_d"), 290);
@@ -191,9 +240,9 @@ sealed class SettingsPage : CanvasPage
         Toggle("s_anim", Settings.Animations, v => Settings.Animations = v);
 
         Group("sg1", 3);
-        Toggle("s_win", Settings.StartWithWindows, v => { Settings.StartWithWindows = v; Settings.ApplyStartup(); });
+        Gated("s_win", Settings.StartWithWindows, v => { Settings.StartWithWindows = v; Settings.ApplyStartup(); });
         Toggle("s_min", Settings.StartMinimized, v => Settings.StartMinimized = v);
-        Toggle("s_tray", Settings.MinimizeToTray, v => Settings.MinimizeToTray = v);
+        Gated("s_tray", Settings.MinimizeToTray, v => Settings.MinimizeToTray = v);
 
         Group("sg2", 3);
         Toggle("s_open", Settings.AutoOpenApp, v => Settings.AutoOpenApp = v);
@@ -266,19 +315,18 @@ sealed class AboutPage : CanvasPage
     void Link(string labelKey, string url, ref double x, int y)
     {
         if (string.IsNullOrEmpty(url)) return;
-        Add(new ButtonItem { Text = Loc.T(labelKey), Icon = Ic.Globe, B = R(x, y, 150, 40), Click = () => { try { Process.Start(url.Contains("@") && !url.StartsWith("http") ? "mailto:" + url : url); } catch { } } });
+        Add(new ButtonItem { Text = Loc.T(labelKey), Icon = Ic.Globe, B = R(x, y, 150, 40), Click = () => { try { Links.Open(url); } catch { } } });
         x += 160;
     }
 
     protected override void Build()
     {
         int y = 0; Header(Loc.T("a_t"), Loc.T("tagline"), ref y);
-        const int hero = 250;
+        const int hero = 224;
         Add(new CardItem { B = R(0, y, IW, hero), Tint = true, Radius = 22 });
         Add(new LogoItem { B = R(IW / 2 - 90, y + 6, 180, 150) });
         Add(new TextItem { Text = Loc.T("app"), F = Ui.Font(20, FontStyle.Bold), Color = Pal.Text, Alignment = Align.Center, B = R(0, y + 148, IW, 36) });
-        Add(new TextItem { Text = Loc.T("designed"), F = Ui.Font(12.5f, FontStyle.Bold), Color = Pal.Cyan, Alignment = Align.Center, B = R(0, y + 186, IW, 26) });
-        Add(new TextItem { Text = Loc.T("a_ver") + " " + Application.ProductVersion.Split('+')[0], F = Ui.Font(9.5f), Color = Pal.Muted, Alignment = Align.Center, B = R(0, y + 214, IW, 22) });
+        Add(new TextItem { Text = Loc.T("a_ver") + " " + Application.ProductVersion.Split('+')[0], F = Ui.Font(9.5f), Color = Pal.Muted, Alignment = Align.Center, B = R(0, y + 190, IW, 22) });
         y += hero + 16;
         y = Section(Loc.T("a_t"), Loc.T("a_desc"), y);
         y = Section(Loc.T("a_feat"), Loc.T("a_f"), y, true);
@@ -286,6 +334,7 @@ sealed class AboutPage : CanvasPage
         y = Section(Loc.T("a_priv"), Loc.T("a_priv_t"), y);
         y = Section(Loc.T("a_oss"), Loc.T("a_oss_t"), y, true);
         Add(new ButtonItem { Text = Loc.T("a_lic"), Icon = Ic.Folder, B = R(0, y - 4, 190, 40), Click = () => { try { var d = Path.Combine(Paths.ToolsDir, "licenses"); Process.Start("explorer.exe", "\"" + (Directory.Exists(d) ? d : Paths.ToolsDir) + "\""); } catch { } } });
+        Add(new ButtonItem { Text = Loc.T("a_upd"), Icon = Ic.Refresh, B = R(400, y - 4, 190, 40), Click = () => { UpdateCheck.CheckAsync(); if (!UpdateCheck.Available) MessageBox.Show(Loc.T("a_upd_none"), Loc.T("app"), MessageBoxButtons.OK, MessageBoxIcon.Information, MessageBoxDefaultButton.Button1, SettingsPage.Opts()); } });
         Add(new ButtonItem { Text = Loc.T("s_diag"), Icon = Ic.Copy, B = R(200, y - 4, 190, 40), Click = () => { try { Clipboard.SetText(ctl.Diagnostics()); } catch { } } });
         y += 52;
         string sys = "Windows: " + Controller.WindowsName() + "\n.NET Framework: " + Environment.Version + "\nadb: " + adbVersion;

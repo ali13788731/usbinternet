@@ -7,7 +7,7 @@ using System.Drawing.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 enum Align { Start, Center, End }
 

@@ -23,6 +23,10 @@ object Prefs {
     const val THEME_DARK = "dark"
     const val THEME_LIGHT = "light"
 
+    const val ROUTE_ALL = 0
+    const val ROUTE_ONLY = 1
+    const val ROUTE_EXCEPT = 2
+
     const val UNIT_MBS = 0
     const val UNIT_MBPS = 1
 
@@ -67,6 +71,17 @@ object Prefs {
     fun speedUnit(c: Context): Int = sp(c).getInt("speed_unit", UNIT_MBS)
     fun setSpeedUnit(c: Context, v: Int) = sp(c).edit().putInt("speed_unit", v).apply()
 
+    /** Pro: disconnect automatically after this many minutes (0 = off). */
+    fun autoStopMinutes(c: Context): Int = sp(c).getInt("auto_stop", 0)
+    fun setAutoStopMinutes(c: Context, v: Int) = sp(c).edit().putInt("auto_stop", v).apply()
+
+    /** Pro: which apps use the cable (ROUTE_ALL / ROUTE_ONLY / ROUTE_EXCEPT). */
+    fun routeMode(c: Context): Int = sp(c).getInt("route_mode", ROUTE_ALL)
+    fun setRouteMode(c: Context, v: Int) = sp(c).edit().putInt("route_mode", v).apply()
+
+    fun routeApps(c: Context): Set<String> = HashSet(sp(c).getStringSet("route_apps", emptySet()) ?: emptySet())
+    fun setRouteApps(c: Context, v: Set<String>) = sp(c).edit().putStringSet("route_apps", HashSet(v)).apply()
+
     fun onboardingDone(c: Context): Boolean = sp(c).getBoolean("onboarding_done", false)
     fun setOnboardingDone(c: Context, v: Boolean) = sp(c).edit().putBoolean("onboarding_done", v).apply()
 
@@ -82,6 +97,18 @@ object Prefs {
         DNS_CUSTOM -> customDns(c).trim().takeIf { isValidIpv4(it) } ?: "8.8.8.8"
         else -> "8.8.8.8"
     }
+}
+
+/** Primary + fallback DNS servers, comma separated (the fallback makes name lookups more reliable). */
+fun Prefs.resolveDnsList(c: Context): String {
+    val primary = resolveDns(c)
+    val secondary = when (primary) {
+        "8.8.8.8" -> "8.8.4.4"
+        "1.1.1.1" -> "1.0.0.1"
+        "9.9.9.9" -> "149.112.112.112"
+        else -> "8.8.8.8"
+    }
+    return "$primary,$secondary"
 }
 
 /** Observable copy of the settings so Compose recomposes when an option changes. */
@@ -106,6 +133,12 @@ class SettingsState(context: Context) {
         private set
     var onboardingDone by mutableStateOf(Prefs.onboardingDone(ctx))
         private set
+    var autoStop by mutableStateOf(Prefs.autoStopMinutes(ctx))
+        private set
+    var routeMode by mutableStateOf(Prefs.routeMode(ctx))
+        private set
+    var routeApps by mutableStateOf(Prefs.routeApps(ctx))
+        private set
 
     fun updateLanguage(v: String) { language = v; Prefs.setLanguage(ctx, v) }
     fun updateTheme(v: String) { theme = v; Prefs.setTheme(ctx, v) }
@@ -116,6 +149,9 @@ class SettingsState(context: Context) {
     fun updateShowGraph(v: Boolean) { showGraph = v; Prefs.setShowGraph(ctx, v) }
     fun updateSpeedUnit(v: Int) { speedUnit = v; Prefs.setSpeedUnit(ctx, v) }
     fun updateOnboardingDone(v: Boolean) { onboardingDone = v; Prefs.setOnboardingDone(ctx, v) }
+    fun updateAutoStop(v: Int) { autoStop = v; Prefs.setAutoStopMinutes(ctx, v) }
+    fun updateRouteMode(v: Int) { routeMode = v; Prefs.setRouteMode(ctx, v) }
+    fun updateRouteApps(v: Set<String>) { routeApps = HashSet(v); Prefs.setRouteApps(ctx, v) }
 
     /** Restores every option to its default. The intro stays marked as seen. */
     fun resetAll() {
@@ -130,6 +166,9 @@ class SettingsState(context: Context) {
         showGraph = Prefs.showGraph(ctx)
         speedUnit = Prefs.speedUnit(ctx)
         onboardingDone = Prefs.onboardingDone(ctx)
+        autoStop = Prefs.autoStopMinutes(ctx)
+        routeMode = Prefs.routeMode(ctx)
+        routeApps = Prefs.routeApps(ctx)
     }
 }
 

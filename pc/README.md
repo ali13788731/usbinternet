@@ -1,4 +1,4 @@
-# Cable Internet — Windows app
+# Peyvand — Windows app
 
 Shares the computer's internet with an Android phone over a USB cable.
 It bundles everything the customer needs, so there is nothing to install by hand:
@@ -7,7 +7,9 @@ It bundles everything the customer needs, so there is nothing to install by hand
 * `gnirehtet.exe` (relay) — shares the internet
 * `app.apk` — the phone app, installed automatically over the cable
 * A modern custom-drawn UI (dark/light, English/Persian with RTL), animated splash, tray icon
-* Pages: Home, USB Guide (per phone brand), Settings, About (menu shared with the Android app)
+* Pages: Home (live usage), Subscription (Free vs Pro), Tutorial, Requirements (auto-detected), Settings, About
+* Usage: a side channel with the phone app (`adb reverse localabstract:peyvand-ctl tcp:31417`) shows the exact monthly usage and stops sharing when the free 100 MB ends
+* Update check through the same `update/update.json` (`pc_*` fields); set `Brand.UpdateUrl`
 * Owner contact links: fill `Brand.cs` (Telegram / Email / Website); empty rows are hidden
 
 ## How it is built
@@ -17,12 +19,12 @@ Push to GitHub. The workflow in `.github/workflows/build.yml`:
 1. builds the Android APK,
 2. downloads adb and gnirehtet,
 3. builds the Windows app on .NET Framework 4.8 (built into Windows 10/11, so the exe is ~100 KB),
-4. builds `CableInternet-Setup.exe` with Inno Setup.
+4. builds `Peyvand-Setup.exe` with Inno Setup.
 
 Download the results from the **Actions → run → Artifacts** section:
 
-* `CableInternet-Windows-Setup` — installer to give to customers
-* `CableInternet-Windows-portable` — same app as a folder (zip it yourself)
+* `Peyvand-Windows-Setup` — installer to give to customers
+* `Peyvand-Windows-portable` — same app as a folder (zip it yourself)
 * `UsbNet-debug-apk` — the phone app
 
 ## Licences

@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using Microsoft.Win32;
 
-namespace CableInternet;
+namespace Peyvand;
 
-/// <summary>User settings, stored in %AppData%\CableInternet\settings.ini.</summary>
+/// <summary>User settings, stored in %AppData%\Peyvand\settings.ini.</summary>
 static class Settings
 {
     public static string Language = "auto";   // auto | en | fa
@@ -18,8 +18,10 @@ static class Settings
     public static bool AutoOpenApp = true;
     public static bool AutoInstall = true;
     public static bool AutoRelay = true;
+    /// <summary>UTC ticks when the phone last reported an active Pro subscription (cached for 3 days).</summary>
+    public static long ProLastSeenUtc;
 
-    static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CableInternet");
+    static string Dir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Peyvand");
     static string FilePath => Path.Combine(Dir, "settings.ini");
 
     public static void Reset()
@@ -51,6 +53,7 @@ static class Settings
             AutoOpenApp = GetB(map, "autoOpenApp", AutoOpenApp);
             AutoInstall = GetB(map, "autoInstall", AutoInstall);
             AutoRelay = GetB(map, "autoRelay", AutoRelay);
+            if (map.TryGetValue("proSeen", out var ps) && long.TryParse(ps, out var pl)) ProLastSeenUtc = pl;
         }
         catch { }
     }
@@ -71,10 +74,13 @@ static class Settings
                 "autoOpenApp=" + AutoOpenApp,
                 "autoInstall=" + AutoInstall,
                 "autoRelay=" + AutoRelay,
+                "proSeen=" + ProLastSeenUtc,
             });
         }
         catch { }
     }
+
+    public static void NoteProSeen() { ProLastSeenUtc = DateTime.UtcNow.Ticks; Save(); }
 
     static string Get(Dictionary<string, string> m, string k, string d) => m.TryGetValue(k, out var v) && v.Length > 0 ? v : d;
     static bool GetB(Dictionary<string, string> m, string k, bool d) => m.TryGetValue(k, out var v) && bool.TryParse(v, out var b) ? b : d;
@@ -102,10 +108,10 @@ static class Settings
         {
             using var k = Registry.CurrentUser.OpenSubKey(RunKey, true);
             if (k == null) return;
-            if (StartWithWindows)
-                k.SetValue("CableInternet", "\"" + System.Windows.Forms.Application.ExecutablePath + "\" --tray");
+            if (StartWithWindows && Usage.ProRecent)
+                k.SetValue("Peyvand", "\"" + System.Windows.Forms.Application.ExecutablePath + "\" --tray");
             else
-                k.DeleteValue("CableInternet", false);
+                k.DeleteValue("Peyvand", false);
         }
         catch { }
     }

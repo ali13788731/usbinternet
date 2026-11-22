@@ -109,6 +109,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
                 }
             }
 
+            val dir = if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) -1 else 1
             AnimatedContent(
                 targetState = step,
                 modifier = Modifier
@@ -116,11 +117,11 @@ fun OnboardingScreen(onDone: () -> Unit) {
                     .fillMaxWidth(),
                 transitionSpec = {
                     if (targetState > initialState) {
-                        (slideInHorizontally(tween(350)) { it / 3 } + fadeIn(tween(350))) togetherWith
-                            (slideOutHorizontally(tween(350)) { -it / 3 } + fadeOut(tween(250)))
+                        (slideInHorizontally(tween(350)) { dir * it / 3 } + fadeIn(tween(350))) togetherWith
+                            (slideOutHorizontally(tween(350)) { -dir * it / 3 } + fadeOut(tween(250)))
                     } else {
-                        (slideInHorizontally(tween(350)) { -it / 3 } + fadeIn(tween(350))) togetherWith
-                            (slideOutHorizontally(tween(350)) { it / 3 } + fadeOut(tween(250)))
+                        (slideInHorizontally(tween(350)) { -dir * it / 3 } + fadeIn(tween(350))) togetherWith
+                            (slideOutHorizontally(tween(350)) { dir * it / 3 } + fadeOut(tween(250)))
                     }
                 },
                 label = "onboarding"

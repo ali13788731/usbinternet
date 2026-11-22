@@ -4,7 +4,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Text;
 using System.Windows.Forms;
 
-namespace CableInternet;
+namespace Peyvand;
 
 /// <summary>Animated start screen: logo, name, and the "Designed by Mr.PC" line typed out below the logo.</summary>
 sealed class SplashForm : Form

@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace CableInternet;
+namespace Peyvand;
 
 /// <summary>Locations of the bundled helper programs (they live in the "tools" folder next to the exe).</summary>
 static class Paths
@@ -180,13 +180,15 @@ static class Adb
     public static async Task<bool> ReverseAsync(string serial)
     {
         var (code, _) = await Run(serial, $"reverse localabstract:gnirehtet tcp:{RelayPort}");
+        // Side channel for usage/limit information (optional: failure does not stop sharing).
+        await Run(serial, $"reverse localabstract:peyvand-ctl tcp:{Usage.Port}", 8000);
         return code == 0;
     }
 
     public static async Task<bool> HasReverseAsync(string serial)
     {
         var (_, o) = await Run(serial, "reverse --list", 8000);
-        return o.Contains("gnirehtet");
+        return o.Contains("gnirehtet") && o.Contains("peyvand-ctl");
     }
 
     public static async Task<string> GetPropAsync(string serial, string prop)

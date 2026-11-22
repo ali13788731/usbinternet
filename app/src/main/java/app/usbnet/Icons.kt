@@ -21,7 +21,8 @@ import kotlin.math.sin
 /** All icons are drawn by hand with Canvas so no icon library is needed. */
 enum class Ic {
     Home, Guide, Settings, About, Globe, Contrast, Shield, Bell, Battery, Dev, Star, Share,
-    Reset, Play, Check, Close, Dns, Phone, Pulse, Speed, Power, Down, Up, Lock, Mail, Plane, Screen, Vibrate
+    Reset, Play, Check, Close, Dns, Phone, Pulse, Speed, Power, Down, Up, Lock, Mail, Plane, Screen, Vibrate,
+    Crown, Download, Chevron, Clock, Chart, Apps, Bolt, Computer
 }
 
 @Composable
@@ -266,6 +267,40 @@ fun DrawScope.drawIcon(ic: Ic, color: Color) {
             box(8f, 4f, 8f, 16f, 2f)
             line(4f, 8f, 4f, 16f)
             line(20f, 8f, 20f, 16f)
+        }
+        Ic.Crown -> {
+            poly(true, 3f, 8f, 8f, 12f, 12f, 5f, 16f, 12f, 21f, 8f, 19f, 18f, 5f, 18f)
+        }
+        Ic.Download -> {
+            line(12f, 4f, 12f, 15f)
+            poly(false, 7f, 11f, 12f, 16f, 17f, 11f)
+            line(5f, 20f, 19f, 20f)
+        }
+        Ic.Chevron -> {
+            poly(false, 9f, 5f, 16f, 12f, 9f, 19f)
+        }
+        Ic.Clock -> {
+            ring(12f, 12f, 9f)
+            poly(false, 12f, 7f, 12f, 12f, 15.5f, 14f)
+        }
+        Ic.Chart -> {
+            line(5f, 20f, 5f, 12f)
+            line(12f, 20f, 12f, 5f)
+            line(19f, 20f, 19f, 9f)
+        }
+        Ic.Apps -> {
+            box(4f, 4f, 6f, 6f, 1.5f)
+            box(14f, 4f, 6f, 6f, 1.5f)
+            box(4f, 14f, 6f, 6f, 1.5f)
+            box(14f, 14f, 6f, 6f, 1.5f)
+        }
+        Ic.Bolt -> {
+            poly(true, 13f, 3f, 5f, 13f, 11f, 13f, 10f, 21f, 19f, 10f, 13f, 10f)
+        }
+        Ic.Computer -> {
+            box(3f, 4f, 18f, 12f, 2f)
+            line(8f, 20f, 16f, 20f)
+            line(12f, 16f, 12f, 20f)
         }
     }
 }

@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -75,7 +77,10 @@ fun AboutScreen(onReplayIntro: () -> Unit) {
     val ctx = LocalContext.current
     val c = LocalAppColors.current
     val versionName = remember { appVersionName(ctx) }
-    val versionCode = remember { appVersionCode(ctx) }
+    var updMsg by remember { mutableStateOf("") }
+    val msgLatest = stringResource(R.string.upd_latest)
+    val msgFail = stringResource(R.string.upd_check_failed)
+    val msgNew = stringResource(R.string.upd_new_found)
 
     val infinite = rememberInfiniteTransition(label = "about")
     val breathe by infinite.animateFloat(
@@ -121,24 +126,10 @@ fun AboutScreen(onReplayIntro: () -> Unit) {
                 )
                 Spacer(Modifier.height(6.dp))
                 AppText(
-                    stringResource(R.string.about_version, versionName, versionCode),
+                    stringResource(R.string.about_version, versionName),
                     size = 13.sp,
                     color = c.muted
                 )
-                Spacer(Modifier.height(14.dp))
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(BrandGradient)
-                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                ) {
-                    AppText(
-                        stringResource(R.string.splash_designed_by),
-                        size = 15.sp,
-                        weight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
             }
         }
 
@@ -187,10 +178,21 @@ fun AboutScreen(onReplayIntro: () -> Unit) {
                     onClick = { shareApp(ctx, shareText) }
                 )
                 SettingRow(
-                    ic = Ic.Play,
-                    tint = BrandViolet,
-                    title = stringResource(R.string.other_intro_title),
-                    onClick = onReplayIntro
+                    ic = Ic.Download,
+                    tint = AccentGreen,
+                    title = stringResource(R.string.upd_check),
+                    subtitle = updMsg.ifEmpty { null },
+                    onClick = {
+                        updMsg = ""
+                        Updates.checkAsync(ctx) { ok ->
+                            updMsg = when {
+                                !ok -> msgFail
+                                Updates.available(ctx) -> msgNew
+                                else -> msgLatest
+                            }
+                            if (ok && Updates.available(ctx)) Updates.openStore(ctx)
+                        }
+                    }
                 )
             }
         }
@@ -229,13 +231,6 @@ fun AboutScreen(onReplayIntro: () -> Unit) {
             }
         }
 
-        AppText(
-            stringResource(R.string.splash_designed_by),
-            modifier = Modifier.fillMaxWidth(),
-            size = 12.sp,
-            color = c.muted,
-            align = TextAlign.Center
-        )
     }
 }
 
